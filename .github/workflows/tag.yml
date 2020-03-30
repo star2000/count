@@ -1,0 +1,47 @@
+on:
+  issues:
+    types:
+      - labeled
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - if: github.event.label.name == 'count' && github.event.issue.state == 'open'
+        uses: actions/checkout@master
+      - run: git tag ${{ github.event.issue.number }}
+      - uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tags: true
+          force: true
+      - uses: peter-evans/create-or-update-comment@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            你的计数链接:  
+            `https://cdn.jsdelivr.net/gh/${{ github.repository }}@${{ github.event.issue.number }}/count`
+
+            徽章:  
+            [![total / day](https://img.shields.io/badge/dynamic/json?url=https://data.jsdelivr.com/v1/package/gh/${{ github.repository }}@${{ github.event.issue.number }}/stats/day&label=total&query=total&suffix=+/+day&style=flat-square)](https://github.com/${{ github.repository }})
+            [![total / week](https://img.shields.io/badge/dynamic/json?url=https://data.jsdelivr.com/v1/package/gh/${{ github.repository }}@${{ github.event.issue.number }}/stats/week&label=total&query=total&suffix=+/+week&style=flat-square)](https://github.com/${{ github.repository }})
+            [![total / month](https://img.shields.io/badge/dynamic/json?url=https://data.jsdelivr.com/v1/package/gh/${{ github.repository }}@${{ github.event.issue.number }}/stats/month&label=total&query=total&suffix=+/+month&style=flat-square)](https://github.com/${{ github.repository }})
+            [![total / year](https://img.shields.io/badge/dynamic/json?url=https://data.jsdelivr.com/v1/package/gh/${{ github.repository }}@${{ github.event.issue.number }}/stats/year&label=total&query=total&suffix=+/+year&style=flat-square)](https://github.com/${{ github.repository }})
+
+            ```md
+            [![total / day](https://img.shields.io/badge/dynamic/json?url=https://data.jsdelivr.com/v1/package/gh/${{ github.repository }}@${{ github.event.issue.number }}/stats/day&label=total&query=total&suffix=+/+day&style=flat-square)](https://github.com/${{ github.repository }})
+            [![total / week](https://img.shields.io/badge/dynamic/json?url=https://data.jsdelivr.com/v1/package/gh/${{ github.repository }}@${{ github.event.issue.number }}/stats/week&label=total&query=total&suffix=+/+week&style=flat-square)](https://github.com/${{ github.repository }})
+            [![total / month](https://img.shields.io/badge/dynamic/json?url=https://data.jsdelivr.com/v1/package/gh/${{ github.repository }}@${{ github.event.issue.number }}/stats/month&label=total&query=total&suffix=+/+month&style=flat-square)](https://github.com/${{ github.repository }})
+            [![total / year](https://img.shields.io/badge/dynamic/json?url=https://data.jsdelivr.com/v1/package/gh/${{ github.repository }}@${{ github.event.issue.number }}/stats/year&label=total&query=total&suffix=+/+year&style=flat-square)](https://github.com/${{ github.repository }})
+
+            ```
+      - uses: octokit/request-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          route: PATCH /repos/:repository/issues/:issue_number
+          repository: ${{ github.repository }}
+          issue_number: ${{ github.event.issue.number }}
+          labels: "[]"
+          state: closed
